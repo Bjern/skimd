@@ -49,9 +49,21 @@ function renderToken(ctx: RenderCtx, tok: Tokens.Generic): void {
       return renderCode(ctx, tok as Tokens.Code);
     case 'list':
       return renderList(ctx, tok as Tokens.List);
+    case 'blockquote':
+      return renderBlockquote(ctx, tok as Tokens.Blockquote);
     case 'space':
       return;
   }
+}
+
+function renderBlockquote(ctx: RenderCtx, q: Tokens.Blockquote): void {
+  for (const tok of q.tokens ?? []) {
+    const text = (tok as Tokens.Generic & { text?: string }).text ?? '';
+    for (const line of text.split('\n')) {
+      push(ctx, { kind: 'quote', text: `${style('▎', { color: 'magenta' })} ${style(line, { italic: true, dim: true })}` });
+    }
+  }
+  push(ctx, { kind: 'blank', text: '' });
 }
 
 function renderList(ctx: RenderCtx, l: Tokens.List, depth = 0): void {

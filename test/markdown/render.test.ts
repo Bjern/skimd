@@ -101,3 +101,16 @@ describe('render — lists', () => {
     expect(plain.some(l => /^ {2}• a1$/.test(l))).toBe(true);
   });
 });
+
+describe('render — blockquote', () => {
+  it('renders blockquote with ▎ bar', () => {
+    const out = render(parse('> quoted'), { width: 80, strict: false, color: true });
+    expect(out.lines.map(l => stripAnsi(l.text)).some(l => l.startsWith('▎ quoted'))).toBe(true);
+  });
+
+  it('renders multiline blockquote', () => {
+    const out = render(parse('> line one\n> line two'), { width: 80, strict: false, color: true });
+    const plain = out.lines.map(l => stripAnsi(l.text));
+    expect(plain.filter(l => l.startsWith('▎ ')).length).toBeGreaterThanOrEqual(2);
+  });
+});
