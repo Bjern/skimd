@@ -20,7 +20,7 @@ type InkKey = {
 export function useKeybindings(
   state: AppState,
   dispatch: (a: Action) => void,
-  env: { exit: () => void }
+  env: { exit: () => void; onPickFile?: (path: string) => void }
 ): void {
   const chordRef = useRef<string | null>(null);
 
@@ -299,15 +299,25 @@ function codePickerKeys(
 function filePickerKeys(
   input: string,
   key: InkKey,
-  _state: AppState,
-  _dispatch: (a: Action) => void,
-  env: { exit: () => void }
+  state: AppState,
+  dispatch: (a: Action) => void,
+  env: { exit: () => void; onPickFile?: (path: string) => void }
 ): void {
+  const files = state.discoveryFiles;
   if (key.escape) {
     env.exit();
     return;
   }
-  // File picker is driven separately via the cli.ts pre-app launcher
-  // (see Task 28); this handler is a placeholder for future in-session file switching.
-  void input;
+  if (input === 'j' || key.downArrow) {
+    dispatch({ type: 'setPickerCursor', index: Math.min(files.length - 1, state.pickerCursor + 1) });
+    return;
+  }
+  if (input === 'k' || key.upArrow) {
+    dispatch({ type: 'setPickerCursor', index: Math.max(0, state.pickerCursor - 1) });
+    return;
+  }
+  if (key.return) {
+    const path = files[state.pickerCursor];
+    if (path && env.onPickFile) env.onPickFile(path);
+  }
 }

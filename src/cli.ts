@@ -10,6 +10,8 @@ import { parse } from './markdown/parse.js';
 import { render as renderMd } from './markdown/render.js';
 import { buildToc } from './markdown/toc.js';
 import { App } from './app.js';
+import { discoverFiles } from './util/discoverFiles.js';
+import type { AppState } from './state/store.js';
 
 export type ResolveDeps = {
   readFile: (p: string) => Promise<string>;
@@ -91,13 +93,78 @@ export async function main(): Promise<void> {
   });
   const width = cli.flags.width ?? caps.width;
 
+  // Interactive TTY + no path + no stdin pipe → file picker mode.
+  const noPathNoPipe = cli.input[0] === undefined && !!process.stdin.isTTY;
+  const wantFilePicker = noPathNoPipe && caps.isTty && !cli.flags.code;
+
+  if (wantFilePicker) {
+    const files = discoverFiles(process.cwd());
+    const emptySource: AppState['source'] = {
+      path: null,
+      content: '',
+      ast: parse(''),
+      lines: [],
+      links: [],
+      codeBlocks: [],
+      anchors: new Map(),
+      toc: [],
+    };
+    let currentInstance: ReturnType<typeof inkRender> | null = null;
+    const onPickFile = (path: string): void => {
+      try {
+        const content = readFileSync(path, 'utf8').replace(/^\uFEFF/, '');
+        const ast = parse(content);
+        const r = renderMd(ast, {
+          width,
+          color: cli.flags.color && caps.color,
+          strict: cli.flags.strict,
+        });
+        const toc = buildToc(ast);
+        const newSource: AppState['source'] = {
+          path,
+          content,
+          ast,
+          lines: r.lines,
+          links: r.links,
+          codeBlocks: r.codeBlocks,
+          anchors: r.anchors,
+          toc,
+        };
+        currentInstance?.rerender(
+          React.createElement(App, {
+            init: {
+              source: newSource,
+              width,
+              height: caps.height,
+            },
+          })
+        );
+      } catch (err) {
+        process.stderr.write(`skimd: ${err instanceof Error ? err.message : String(err)}\n`);
+      }
+    };
+    currentInstance = inkRender(
+      React.createElement(App, {
+        init: {
+          source: emptySource,
+          width,
+          height: caps.height,
+          mode: 'filePicker',
+          discoveryFiles: files,
+        },
+        onPickFile,
+      })
+    );
+    await currentInstance.waitUntilExit();
+    process.exit(0);
+  }
+
   const source = await resolveSource(
     cli.input[0] !== undefined ? { path: cli.input[0] } : {},
     {
       readFile: readFileDefault,
       readStdin: readStdinDefault,
       isStdinTty: !!process.stdin.isTTY,
-      // File picker overlay lands in M3 T28; M1 stubs with README.md.
       pickFile: async () => 'README.md',
       existsSync: fsExists,
       cwd: process.cwd(),

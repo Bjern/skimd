@@ -8,6 +8,7 @@ import { TOC } from './components/overlays/TOC.js';
 import { SearchBar } from './components/overlays/SearchBar.js';
 import { LinkPicker } from './components/overlays/LinkPicker.js';
 import { CodePicker } from './components/overlays/CodePicker.js';
+import { FilePicker } from './components/overlays/FilePicker.js';
 import { flattenToc } from './state/tocCursor.js';
 import { computeVisibleLines } from './state/visibleLines.js';
 import { useTerminalSize } from './hooks/useTerminalSize.js';
@@ -25,11 +26,15 @@ function findTitle(toc: AppState['source']['toc'], id: string): string | null {
   return null;
 }
 
-function Shell(): JSX.Element {
+function Shell({
+  onPickFile,
+}: {
+  onPickFile?: (path: string) => void;
+}): JSX.Element {
   const { state, dispatch } = useAppState();
   const { exit } = useApp();
   const { width, height } = useTerminalSize();
-  useKeybindings(state, dispatch, { exit });
+  useKeybindings(state, dispatch, onPickFile ? { exit, onPickFile } : { exit });
 
   const visible = computeVisibleLines(state.source.lines, state.collapsed, state.source.toc);
   const currentId = useScrollAnchor(state.source.anchors, state.viewport.scrollOffset);
@@ -46,6 +51,8 @@ function Shell(): JSX.Element {
         <LinkPicker links={state.source.links} cursor={state.pickerCursor} />
       ) : state.mode === 'codePicker' ? (
         <CodePicker blocks={state.source.codeBlocks} cursor={state.pickerCursor} />
+      ) : state.mode === 'filePicker' ? (
+        <FilePicker files={state.discoveryFiles} cursor={state.pickerCursor} />
       ) : state.mode === 'toc' ? (
         <Box flexDirection="row" height={readerHeight}>
           <TOC
@@ -84,12 +91,14 @@ function Shell(): JSX.Element {
 
 export function App({
   init,
+  onPickFile,
 }: {
   init: Parameters<typeof initialState>[0];
+  onPickFile?: (path: string) => void;
 }): JSX.Element {
   return (
     <AppProvider init={init}>
-      <Shell />
+      {onPickFile ? <Shell onPickFile={onPickFile} /> : <Shell />}
     </AppProvider>
   );
 }

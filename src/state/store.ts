@@ -30,6 +30,7 @@ export type AppState = {
   collapsed: Set<string>;
   tocCursor: number;
   pickerCursor: number;
+  discoveryFiles: string[];
   search: { query: string; matches: Match[]; activeIndex: number; priorOffset: number } | null;
   mouseTracking: boolean;
 };
@@ -42,20 +43,24 @@ export type Action =
   | { type: 'setTocCursor'; index: number }
   | { type: 'setPickerCursor'; index: number }
   | { type: 'setSearch'; search: AppState['search'] }
-  | { type: 'setMouseTracking'; on: boolean };
+  | { type: 'setMouseTracking'; on: boolean }
+  | { type: 'loadSource'; source: AppState['source'] };
 
 export function initialState(init: {
   source: AppState['source'];
   width: number;
   height: number;
+  mode?: Mode;
+  discoveryFiles?: string[];
 }): AppState {
   return {
     source: init.source,
     viewport: { scrollOffset: 0, width: init.width, height: init.height },
-    mode: 'reader',
+    mode: init.mode ?? 'reader',
     collapsed: new Set(),
     tocCursor: 0,
     pickerCursor: 0,
+    discoveryFiles: init.discoveryFiles ?? [],
     search: null,
     mouseTracking: false,
   };
@@ -103,5 +108,16 @@ export function reduce(state: AppState, action: Action): AppState {
       return { ...state, search: action.search };
     case 'setMouseTracking':
       return { ...state, mouseTracking: action.on };
+    case 'loadSource':
+      return {
+        ...state,
+        source: action.source,
+        viewport: { ...state.viewport, scrollOffset: 0 },
+        mode: 'reader',
+        collapsed: new Set(),
+        tocCursor: 0,
+        pickerCursor: 0,
+        search: null,
+      };
   }
 }
