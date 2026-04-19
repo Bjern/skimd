@@ -118,6 +118,10 @@ export function useKeybindings(
         dispatch({ type: 'setMode', mode: 'codeOnly' });
         return;
       }
+      if (input === 'M') {
+        dispatch({ type: 'setMouseTracking', on: !state.mouseTracking });
+        return;
+      }
       if (input === '/') {
         dispatch({
           type: 'setSearch',

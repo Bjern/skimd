@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Box, useApp } from 'ink';
 import { AppProvider, useAppState } from './state/context.js';
 import { Reader } from './components/Reader.js';
@@ -35,6 +35,17 @@ function Shell({
   const { exit } = useApp();
   const { width, height } = useTerminalSize();
   useKeybindings(state, dispatch, onPickFile ? { exit, onPickFile } : { exit });
+
+  useEffect(() => {
+    if (state.mouseTracking) {
+      process.stdout.write('\x1b[?1006h\x1b[?1000h');
+    }
+    return () => {
+      if (state.mouseTracking) {
+        process.stdout.write('\x1b[?1000l\x1b[?1006l');
+      }
+    };
+  }, [state.mouseTracking]);
 
   const visible = computeVisibleLines(
     state.source.lines,
