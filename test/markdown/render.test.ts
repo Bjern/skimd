@@ -78,6 +78,22 @@ describe('render — code blocks', () => {
     expect(out.codeBlocks).toHaveLength(1);
     expect(out.codeBlocks[0]?.lang).toBe('');
   });
+
+  it('does not crash on an unknown fence language (regression: cli-highlight threw on `csv`)', () => {
+    const src = '```csv\na,b,c\n1,2,3\n```';
+    // The failure mode we are guarding against is an exception escaping render().
+    expect(() => render(parse(src), { width: 80, strict: false, color: true })).not.toThrow();
+    const out = render(parse(src), { width: 80, strict: false, color: true });
+    const plain = out.lines.map(l => stripAnsi(l.text));
+    expect(plain.some(l => l.startsWith('┌─ csv'))).toBe(true);
+    expect(plain.some(l => l.includes('a,b,c'))).toBe(true);
+    expect(plain.some(l => l.includes('1,2,3'))).toBe(true);
+  });
+
+  it('also survives other nonsense fence tags', () => {
+    const src = '```mermaid\ngraph TD; A-->B\n```';
+    expect(() => render(parse(src), { width: 80, strict: false, color: true })).not.toThrow();
+  });
 });
 
 describe('render — lists', () => {
