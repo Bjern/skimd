@@ -36,7 +36,12 @@ function Shell({
   const { width, height } = useTerminalSize();
   useKeybindings(state, dispatch, onPickFile ? { exit, onPickFile } : { exit });
 
-  const visible = computeVisibleLines(state.source.lines, state.collapsed, state.source.toc);
+  const visible = computeVisibleLines(
+    state.source.lines,
+    state.collapsed,
+    state.source.toc,
+    state.mode === 'codeOnly'
+  );
   const currentId = useScrollAnchor(state.source.anchors, state.viewport.scrollOffset);
   const currentTitle = currentId ? findTitle(state.source.toc, currentId) : null;
 

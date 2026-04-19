@@ -42,6 +42,31 @@ export function useKeybindings(
       searchKeys(input, k, state, dispatch);
       return;
     }
+    if (state.mode === 'codeOnly') {
+      if (input === 'c' || key.escape) {
+        dispatch({ type: 'setMode', mode: 'reader' });
+        return;
+      }
+      if (input === 'q') {
+        env.exit();
+        return;
+      }
+      if (chordRef.current === 'g') {
+        chordRef.current = null;
+        if (input === 'c') {
+          dispatch({ type: 'setPickerCursor', index: 0 });
+          dispatch({ type: 'setMode', mode: 'codePicker' });
+        }
+        return;
+      }
+      if (input === 'g' && !k.shift) {
+        chordRef.current = 'g';
+        return;
+      }
+      // Reuse reader scroll keys in codeOnly
+      readerKeys(input, k, state, dispatch, env);
+      return;
+    }
     if (state.mode === 'reader') {
       // Chord continuation
       if (chordRef.current === 'g') {
@@ -87,6 +112,10 @@ export function useKeybindings(
       if (input === 't') {
         dispatch({ type: 'setMode', mode: 'toc' });
         dispatch({ type: 'setTocCursor', index: 0 });
+        return;
+      }
+      if (input === 'c') {
+        dispatch({ type: 'setMode', mode: 'codeOnly' });
         return;
       }
       if (input === '/') {
