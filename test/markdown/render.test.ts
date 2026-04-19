@@ -114,3 +114,10 @@ describe('render — blockquote', () => {
     expect(plain.filter(l => l.startsWith('▎ ')).length).toBeGreaterThanOrEqual(2);
   });
 });
+
+describe('render — horizontal rule', () => {
+  it('renders hr as full-width dim rule', () => {
+    const out = render(parse('---'), { width: 40, strict: false, color: true });
+    expect(out.lines.map(l => stripAnsi(l.text)).some(l => l === '─'.repeat(40))).toBe(true);
+  });
+});

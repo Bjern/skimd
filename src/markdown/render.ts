@@ -51,9 +51,16 @@ function renderToken(ctx: RenderCtx, tok: Tokens.Generic): void {
       return renderList(ctx, tok as Tokens.List);
     case 'blockquote':
       return renderBlockquote(ctx, tok as Tokens.Blockquote);
+    case 'hr':
+      return renderHr(ctx);
     case 'space':
       return;
   }
+}
+
+function renderHr(ctx: RenderCtx): void {
+  push(ctx, { kind: 'hr', text: style('─'.repeat(ctx.opts.width), { dim: true }) });
+  push(ctx, { kind: 'blank', text: '' });
 }
 
 function renderBlockquote(ctx: RenderCtx, q: Tokens.Blockquote): void {
