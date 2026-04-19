@@ -190,9 +190,17 @@ function renderCode(ctx: RenderCtx, c: Tokens.Code): void {
     refs: { codeBlockId: id },
   });
   ctx.codeAnchors.set(id, ctx.lines.length - 1);
-  const highlighted = ctx.opts.color && lang
-    ? highlight(c.text, { language: lang, ignoreIllegals: true })
-    : c.text;
+  // cli-highlight throws on unknown languages (e.g. `csv`, `mermaid`, custom
+  // fence tags). Render such blocks without syntax highlighting rather than
+  // crashing the whole pipeline.
+  let highlighted = c.text;
+  if (ctx.opts.color && lang) {
+    try {
+      highlighted = highlight(c.text, { language: lang, ignoreIllegals: true });
+    } catch {
+      highlighted = c.text;
+    }
+  }
   for (const line of highlighted.split('\n')) {
     push(ctx, { kind: 'code', text: `${style('│', { dim: true })} ${line}`, refs: { codeBlockId: id } });
   }
