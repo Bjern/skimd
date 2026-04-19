@@ -109,7 +109,7 @@ export function useKeybindings(
         dispatch({ type: 'setMode', mode: 'help' });
         return;
       }
-      if (input === 't') {
+      if (input === 't' && state.viewport.width >= 60) {
         dispatch({ type: 'setMode', mode: 'toc' });
         dispatch({ type: 'setTocCursor', index: 0 });
         return;
