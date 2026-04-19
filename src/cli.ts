@@ -11,29 +11,8 @@ import { render as renderMd } from './markdown/render.js';
 import { buildToc } from './markdown/toc.js';
 import { App } from './app.js';
 import { discoverFiles } from './util/discoverFiles.js';
+import { resolveSource } from './resolveSource.js';
 import type { AppState } from './state/store.js';
-
-export type ResolveDeps = {
-  readFile: (p: string) => Promise<string>;
-  readStdin: () => Promise<string>;
-  isStdinTty: boolean;
-  pickFile: () => Promise<string>;
-  existsSync: (p: string) => boolean;
-  cwd: string;
-};
-
-export type ResolvedSource = { path: string | null; content: string };
-
-export async function resolveSource(
-  args: { path?: string },
-  deps: ResolveDeps
-): Promise<ResolvedSource> {
-  if (args.path === '-') return { path: null, content: await deps.readStdin() };
-  if (args.path) return { path: args.path, content: await deps.readFile(args.path) };
-  if (!deps.isStdinTty) return { path: null, content: await deps.readStdin() };
-  const picked = await deps.pickFile();
-  return { path: picked, content: await deps.readFile(picked) };
-}
 
 function isBinary(buf: string): boolean {
   // eslint-disable-next-line no-control-regex
@@ -238,11 +217,13 @@ export async function main(): Promise<void> {
   process.exit(0);
 }
 
-const entry = process.argv[1] ?? '';
-const isDirectRun = import.meta.url === `file://${entry}` || import.meta.url.endsWith(entry.replace(/\\/g, '/'));
-if (isDirectRun) {
-  main().catch(err => {
-    process.stderr.write(`skimd: ${err instanceof Error ? err.message : String(err)}\n`);
-    process.exit(1);
-  });
-}
+// This file is the bundled CLI entry (tsup dist/cli.js). It is only ever
+// invoked as a binary — either directly, via the npm bin symlink on POSIX,
+// or via the .cmd shim on Windows. Always run main(). The previous
+// `import.meta.url === 'file://'+argv[1]` guard silently no-op'd on POSIX
+// because argv[1] points at the symlink while import.meta.url points at
+// the real file — so main() never ran and skimd exited with zero output.
+main().catch(err => {
+  process.stderr.write(`skimd: ${err instanceof Error ? err.message : String(err)}\n`);
+  process.exit(1);
+});

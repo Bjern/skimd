@@ -1,6 +1,6 @@
 {
   "name": "skimd",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Terminal markdown reader — zero install, TOC, collapse, one command.",
   "author": "Bjern Potgieter <bjern@valors.io>",
   "homepage": "https://github.com/Bjern/skimd",
