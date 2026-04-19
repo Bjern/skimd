@@ -55,7 +55,8 @@ export async function main(): Promise<void> {
       $ skimd [options] [file]
 
     Options
-      --code[=<lang>]   print all code blocks (optionally filtered by a single language) to stdout and exit
+      --code            print all code blocks to stdout and exit
+      --lang <name>     when used with --code, filter to that language
       --strict          strip all HTML
       --no-color        plain structured output, no ANSI
       --width <n>       override detected terminal width
@@ -65,7 +66,8 @@ export async function main(): Promise<void> {
     {
       importMeta: import.meta,
       flags: {
-        code: { type: 'string' },
+        code: { type: 'boolean', default: false },
+        lang: { type: 'string' },
         strict: { type: 'boolean', default: false },
         color: { type: 'boolean', default: true },
         width: { type: 'number' },
@@ -97,8 +99,8 @@ export async function main(): Promise<void> {
     }
   );
 
-  if (cli.flags.code !== undefined) {
-    const blocks = extractCode(parse(source.content), cli.flags.code || undefined);
+  if (cli.flags.code) {
+    const blocks = extractCode(parse(source.content), cli.flags.lang);
     process.stdout.write(blocks.map(b => b.code).join('\n\n') + '\n');
     process.exit(0);
   }
