@@ -172,3 +172,25 @@ describe('render — tables', () => {
     expect(plain.some(l => l === 'Value: 1')).toBe(true);
   });
 });
+
+describe('render — html blocks', () => {
+  it('renders <details> html block as heading + body', () => {
+    const src = '<details><summary>Why</summary>because</details>';
+    const out = render(parse(src), { width: 80, strict: false, color: true });
+    const plain = out.lines.map(l => stripAnsi(l.text));
+    expect(plain.some(l => l.includes('Why'))).toBe(true);
+    expect(plain.some(l => l.includes('because'))).toBe(true);
+  });
+
+  it('renders <img> as [image: alt] and records a link', () => {
+    const out = render(parse('<img alt="logo" src="https://x/y.png">'), { width: 80, strict: false, color: true });
+    expect(out.lines.some(l => stripAnsi(l.text).includes('[image: logo]'))).toBe(true);
+    expect(out.links[0]?.href).toBe('https://x/y.png');
+  });
+
+  it('strict mode drops <details>', () => {
+    const out = render(parse('<details><summary>X</summary>Y</details>'), { width: 80, strict: true, color: true });
+    const plain = out.lines.map(l => stripAnsi(l.text)).join('\n');
+    expect(plain).not.toContain('Y');
+  });
+});

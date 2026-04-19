@@ -1,6 +1,7 @@
 import type { TokensList, Tokens } from 'marked';
 import { highlight } from 'cli-highlight';
 import { style } from './ansi.js';
+import { interpretHtml } from './html.js';
 
 export type RenderOptions = { width: number; strict: boolean; color: boolean };
 
@@ -55,7 +56,51 @@ function renderToken(ctx: RenderCtx, tok: Tokens.Generic): void {
       return renderHr(ctx);
     case 'table':
       return renderTable(ctx, tok as Tokens.Table);
+    case 'html':
+      return renderHtmlBlock(ctx, tok as Tokens.HTML);
     case 'space':
+      return;
+  }
+}
+
+function renderHtmlBlock(ctx: RenderCtx, h: Tokens.HTML): void {
+  const r = interpretHtml(h.text, { strict: ctx.opts.strict });
+  switch (r.kind) {
+    case 'collapsible': {
+      renderHeading(ctx, { type: 'heading', depth: 3, text: r.summary, raw: '', tokens: [] } as Tokens.Heading);
+      if (r.body) {
+        push(ctx, { kind: 'paragraph', text: r.body });
+        push(ctx, { kind: 'blank', text: '' });
+      }
+      return;
+    }
+    case 'image': {
+      const index = ctx.links.length + 1;
+      ctx.links.push({ index, text: r.alt || 'image', href: r.href });
+      push(ctx, {
+        kind: 'paragraph',
+        text: style(`[image: ${r.alt}]`, { dim: true }),
+        refs: { linkIndices: [index] },
+      });
+      push(ctx, { kind: 'blank', text: '' });
+      return;
+    }
+    case 'link': {
+      const index = ctx.links.length + 1;
+      ctx.links.push({ index, text: r.text, href: r.href });
+      push(ctx, {
+        kind: 'paragraph',
+        text: `${style(r.text, { color: 'blue', underline: true })}${style(`[${index}]`, { dim: true })}`,
+        refs: { linkIndices: [index] },
+      });
+      push(ctx, { kind: 'blank', text: '' });
+      return;
+    }
+    case 'text':
+      if (r.text) {
+        push(ctx, { kind: 'paragraph', text: r.text });
+        push(ctx, { kind: 'blank', text: '' });
+      }
       return;
   }
 }
