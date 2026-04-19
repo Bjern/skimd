@@ -1,10 +1,15 @@
+import React from 'react';
 import { readFileSync, existsSync as fsExists } from 'node:fs';
 import process from 'node:process';
 import meow from 'meow';
+import { render as inkRender } from 'ink';
 import { plainRender } from './util/plainRender.js';
 import { detectCapabilities } from './util/terminal.js';
 import { extractCode } from './markdown/extractCode.js';
 import { parse } from './markdown/parse.js';
+import { render as renderMd } from './markdown/render.js';
+import { buildToc } from './markdown/toc.js';
+import { App } from './app.js';
 
 export type ResolveDeps = {
   readFile: (p: string) => Promise<string>;
@@ -116,8 +121,33 @@ export async function main(): Promise<void> {
     process.exit(0);
   }
 
-  // Interactive path lands in M2 T21.
-  process.stderr.write('skimd: interactive mode not yet wired (M1 stub)\n');
+  const ast = parse(source.content);
+  const r = renderMd(ast, {
+    width,
+    color: cli.flags.color && caps.color,
+    strict: cli.flags.strict,
+  });
+  const toc = buildToc(ast);
+
+  const { waitUntilExit } = inkRender(
+    React.createElement(App, {
+      init: {
+        source: {
+          path: source.path,
+          content: source.content,
+          ast,
+          lines: r.lines,
+          links: r.links,
+          codeBlocks: r.codeBlocks,
+          anchors: r.anchors,
+          toc,
+        },
+        width,
+        height: caps.height,
+      },
+    })
+  );
+  await waitUntilExit();
   process.exit(0);
 }
 
