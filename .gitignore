@@ -1,0 +1,22 @@
+# brainstorming session state
+.superpowers/
+
+# Claude Code local (personal) settings — project settings.json is fine to commit
+.claude/settings.local.json
+
+# node
+node_modules/
+dist/
+*.tsbuildinfo
+
+# env
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# editors
+.vscode/
+.idea/
