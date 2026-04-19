@@ -7,6 +7,7 @@ import { Help } from './components/overlays/Help.js';
 import { TOC } from './components/overlays/TOC.js';
 import { SearchBar } from './components/overlays/SearchBar.js';
 import { LinkPicker } from './components/overlays/LinkPicker.js';
+import { CodePicker } from './components/overlays/CodePicker.js';
 import { flattenToc } from './state/tocCursor.js';
 import { computeVisibleLines } from './state/visibleLines.js';
 import { useTerminalSize } from './hooks/useTerminalSize.js';
@@ -43,6 +44,8 @@ function Shell(): JSX.Element {
         <Help />
       ) : state.mode === 'linkPicker' ? (
         <LinkPicker links={state.source.links} cursor={state.pickerCursor} />
+      ) : state.mode === 'codePicker' ? (
+        <CodePicker blocks={state.source.codeBlocks} cursor={state.pickerCursor} />
       ) : state.mode === 'toc' ? (
         <Box flexDirection="row" height={readerHeight}>
           <TOC
