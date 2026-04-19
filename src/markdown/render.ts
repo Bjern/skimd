@@ -53,9 +53,51 @@ function renderToken(ctx: RenderCtx, tok: Tokens.Generic): void {
       return renderBlockquote(ctx, tok as Tokens.Blockquote);
     case 'hr':
       return renderHr(ctx);
+    case 'table':
+      return renderTable(ctx, tok as Tokens.Table);
     case 'space':
       return;
   }
+}
+
+function renderTable(ctx: RenderCtx, t: Tokens.Table): void {
+  const headers = t.header.map(h => h.text);
+  const rows = t.rows.map(r => r.map(c => c.text));
+
+  if (ctx.opts.width < 60) {
+    for (const row of rows) {
+      headers.forEach((h, i) =>
+        push(ctx, { kind: 'table', text: `${style(h, { bold: true })}: ${row[i] ?? ''}` })
+      );
+      push(ctx, { kind: 'blank', text: '' });
+    }
+    return;
+  }
+
+  const widths = headers.map((h, i) =>
+    Math.max(h.length, ...rows.map(r => (r[i] ?? '').length))
+  );
+  const line = (l: string, m: string, r: string, fill = '─'): string =>
+    style(l + widths.map(w => fill.repeat(w + 2)).join(m) + r, { dim: true });
+  const data = (cells: string[]): string =>
+    `${style('│', { dim: true })} ${cells.map((c, i) => {
+      const w = widths[i] ?? 0;
+      const bare = stripAnsiLocal(c);
+      return c + ' '.repeat(Math.max(0, w - bare.length));
+    }).join(` ${style('│', { dim: true })} `)} ${style('│', { dim: true })}`;
+
+  push(ctx, { kind: 'table', text: line('┌', '┬', '┐') });
+  push(ctx, { kind: 'table', text: data(headers.map(h => style(h, { bold: true }))) });
+  push(ctx, { kind: 'table', text: line('├', '┼', '┤') });
+  for (const r of rows) push(ctx, { kind: 'table', text: data(r) });
+  push(ctx, { kind: 'table', text: line('└', '┴', '┘') });
+  push(ctx, { kind: 'blank', text: '' });
+}
+
+// eslint-disable-next-line no-control-regex
+const ANSI_RE = /\x1b\[[0-9;]*m/g;
+function stripAnsiLocal(s: string): string {
+  return s.replace(ANSI_RE, '');
 }
 
 function renderHr(ctx: RenderCtx): void {

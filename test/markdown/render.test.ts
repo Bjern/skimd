@@ -154,3 +154,21 @@ describe('render — inline formatting', () => {
     expect(out.lines[0]?.refs?.linkIndices).toEqual([1, 2]);
   });
 });
+
+describe('render — tables', () => {
+  it('renders a table with box-draw borders at width >= 60', () => {
+    const src = '| A | B |\n| - | - |\n| 1 | 2 |';
+    const out = render(parse(src), { width: 80, strict: false, color: true });
+    const plain = out.lines.map(l => stripAnsi(l.text));
+    expect(plain.some(l => l.startsWith('┌'))).toBe(true);
+    expect(plain.some(l => l.startsWith('└'))).toBe(true);
+  });
+
+  it('falls back to key:value list at width < 60', () => {
+    const src = '| Name | Value |\n| - | - |\n| a | 1 |';
+    const out = render(parse(src), { width: 40, strict: false, color: true });
+    const plain = out.lines.map(l => stripAnsi(l.text));
+    expect(plain.some(l => l === 'Name: a')).toBe(true);
+    expect(plain.some(l => l === 'Value: 1')).toBe(true);
+  });
+});
