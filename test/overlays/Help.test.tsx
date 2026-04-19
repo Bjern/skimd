@@ -48,8 +48,11 @@ describe('Help overlay', () => {
     ui.stdin.write('q');
     await tick();
     await tick();
-    // When exit() is called, Ink stops re-rendering; the help frame is preserved.
-    // If instead q had closed the overlay, the frame would now show reader mode.
-    expect(ui.lastFrame()).toContain('Keybindings');
+    // After exit(), Ink stops re-rendering. Platform behavior varies:
+    // macOS/Linux freeze the last frame ('Keybindings' still visible); Windows
+    // may clear to an empty frame. Either way the frame must NOT show reader
+    // mode — that would mean q fell back to closing the overlay (the bug).
+    const frame = ui.lastFrame() ?? '';
+    expect(frame).not.toMatch(/↑↓ scroll.*t toc/);
   });
 });

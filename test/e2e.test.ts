@@ -9,7 +9,7 @@ describe('e2e', () => {
       throw new Error('dist/cli.js missing — run `npm run build` first');
     }
     const readme = readFileSync('README.md', 'utf8');
-    const title = readme.split('\n').find(l => l.startsWith('# '))?.slice(2) ?? '';
+    const title = readme.split(/\r?\n/).find(l => l.startsWith('# '))?.slice(2).trim() ?? '';
     const out = execFileSync(process.execPath, ['dist/cli.js', 'README.md'], {
       encoding: 'utf8',
       env: { ...process.env, NO_COLOR: '1' },
