@@ -29,6 +29,7 @@ export type AppState = {
   mode: Mode;
   collapsed: Set<string>;
   tocCursor: number;
+  pickerCursor: number;
   search: { query: string; matches: Match[]; activeIndex: number; priorOffset: number } | null;
   mouseTracking: boolean;
 };
@@ -39,6 +40,7 @@ export type Action =
   | { type: 'setMode'; mode: Mode }
   | { type: 'toggleCollapse'; headingId: string }
   | { type: 'setTocCursor'; index: number }
+  | { type: 'setPickerCursor'; index: number }
   | { type: 'setSearch'; search: AppState['search'] }
   | { type: 'setMouseTracking'; on: boolean };
 
@@ -53,6 +55,7 @@ export function initialState(init: {
     mode: 'reader',
     collapsed: new Set(),
     tocCursor: 0,
+    pickerCursor: 0,
     search: null,
     mouseTracking: false,
   };
@@ -94,6 +97,8 @@ export function reduce(state: AppState, action: Action): AppState {
     }
     case 'setTocCursor':
       return { ...state, tocCursor: Math.max(0, action.index) };
+    case 'setPickerCursor':
+      return { ...state, pickerCursor: Math.max(0, action.index) };
     case 'setSearch':
       return { ...state, search: action.search };
     case 'setMouseTracking':

@@ -1,7 +1,10 @@
+import { useRef } from 'react';
 import { useInput } from 'ink';
 import type { AppState, Action } from '../state/store.js';
 import { flattenToc } from '../state/tocCursor.js';
 import { buildSearch } from '../markdown/search.js';
+import { openBrowser } from '../util/openBrowser.js';
+import { copyToClipboard } from '../util/clipboard.js';
 
 type InkKey = {
   downArrow: boolean;
@@ -19,6 +22,8 @@ export function useKeybindings(
   dispatch: (a: Action) => void,
   env: { exit: () => void }
 ): void {
+  const chordRef = useRef<string | null>(null);
+
   useInput((input, key) => {
     const k = key as InkKey;
     if (k.ctrl && input === 'c') {
@@ -38,6 +43,43 @@ export function useKeybindings(
       return;
     }
     if (state.mode === 'reader') {
+      // Chord continuation
+      if (chordRef.current === 'g') {
+        chordRef.current = null;
+        if (input === 'g') dispatch({ type: 'scrollTo', offset: 0 });
+        else if (input === 'l') {
+          dispatch({ type: 'setPickerCursor', index: 0 });
+          dispatch({ type: 'setMode', mode: 'linkPicker' });
+        } else if (input === 'c') {
+          dispatch({ type: 'setPickerCursor', index: 0 });
+          dispatch({ type: 'setMode', mode: 'codePicker' });
+        }
+        return;
+      }
+      if (chordRef.current === ']') {
+        chordRef.current = null;
+        if (input === ']') jumpHeading(state, dispatch, 1);
+        return;
+      }
+      if (chordRef.current === '[') {
+        chordRef.current = null;
+        if (input === '[') jumpHeading(state, dispatch, -1);
+        return;
+      }
+      // Chord starts
+      if (input === 'g' && !k.shift) {
+        chordRef.current = 'g';
+        return;
+      }
+      if (input === ']') {
+        chordRef.current = ']';
+        return;
+      }
+      if (input === '[') {
+        chordRef.current = '[';
+        return;
+      }
+      // Single-key reader actions
       if (input === '?') {
         dispatch({ type: 'setMode', mode: 'help' });
         return;
@@ -50,31 +92,43 @@ export function useKeybindings(
       if (input === '/') {
         dispatch({
           type: 'setSearch',
-          search: { query: '', matches: [], activeIndex: 0, priorOffset: state.viewport.scrollOffset },
+          search: {
+            query: '',
+            matches: [],
+            activeIndex: 0,
+            priorOffset: state.viewport.scrollOffset,
+          },
         });
         dispatch({ type: 'setMode', mode: 'search' });
         return;
       }
       if (input === 'n' && state.search && state.search.matches.length > 0) {
         const next = (state.search.activeIndex + 1) % state.search.matches.length;
-        dispatch({
-          type: 'setSearch',
-          search: { ...state.search, activeIndex: next },
-        });
+        dispatch({ type: 'setSearch', search: { ...state.search, activeIndex: next } });
         dispatch({ type: 'scrollTo', offset: state.search.matches[next]!.lineIndex });
         return;
       }
       if (input === 'N' && state.search && state.search.matches.length > 0) {
         const total = state.search.matches.length;
         const prev = (state.search.activeIndex - 1 + total) % total;
-        dispatch({
-          type: 'setSearch',
-          search: { ...state.search, activeIndex: prev },
-        });
+        dispatch({ type: 'setSearch', search: { ...state.search, activeIndex: prev } });
         dispatch({ type: 'scrollTo', offset: state.search.matches[prev]!.lineIndex });
         return;
       }
       readerKeys(input, k, state, dispatch, env);
+      return;
+    }
+    if (state.mode === 'linkPicker') {
+      linkPickerKeys(input, k, state, dispatch);
+      return;
+    }
+    if (state.mode === 'codePicker') {
+      codePickerKeys(input, k, state, dispatch);
+      return;
+    }
+    if (state.mode === 'filePicker') {
+      filePickerKeys(input, k, state, dispatch, env);
+      return;
     }
   });
 }
@@ -92,7 +146,6 @@ function readerKeys(
   else if (input === 'k' || key.upArrow) dispatch({ type: 'scrollBy', delta: -1 });
   else if (input === 'd' || key.pageDown) dispatch({ type: 'scrollBy', delta: half });
   else if (input === 'u' || key.pageUp) dispatch({ type: 'scrollBy', delta: -half });
-  else if (input === 'g' && !key.shift) dispatch({ type: 'scrollTo', offset: 0 });
   else if (input === 'G' || (input === 'g' && key.shift))
     dispatch({ type: 'scrollTo', offset: state.source.lines.length });
 }
@@ -104,11 +157,7 @@ function tocKeys(
   dispatch: (a: Action) => void
 ): void {
   const rows = flattenToc(state.source.toc, state.collapsed);
-  if (key.escape || input === 't') {
-    dispatch({ type: 'setMode', mode: 'reader' });
-    return;
-  }
-  if (input === 'q') {
+  if (key.escape || input === 't' || input === 'q') {
     dispatch({ type: 'setMode', mode: 'reader' });
     return;
   }
@@ -152,8 +201,6 @@ function searchKeys(
     dispatch({ type: 'setMode', mode: 'reader' });
     return;
   }
-  // Backspace: Node/Ink passes backspace as input = '' with key.backspace,
-  // but some platforms send DEL (\x7f) as input. Handle both.
   const isBackspace = input === '\x7f' || input === '\b' || input === '';
   let nextQuery = state.search.query;
   if (isBackspace) {
@@ -176,4 +223,91 @@ function searchKeys(
   if (matches.length > 0) {
     dispatch({ type: 'scrollTo', offset: matches[0]!.lineIndex });
   }
+}
+
+function jumpHeading(state: AppState, dispatch: (a: Action) => void, direction: 1 | -1): void {
+  const offset = state.viewport.scrollOffset;
+  const anchors = Array.from(state.source.anchors.values()).sort((a, b) => a - b);
+  if (direction === 1) {
+    const next = anchors.find(a => a > offset);
+    if (next !== undefined) dispatch({ type: 'scrollTo', offset: next });
+  } else {
+    const prev = [...anchors].reverse().find(a => a < offset);
+    if (prev !== undefined) dispatch({ type: 'scrollTo', offset: prev });
+  }
+}
+
+function commonPickerNav(
+  input: string,
+  key: InkKey,
+  max: number,
+  state: AppState,
+  dispatch: (a: Action) => void
+): 'handled' | 'passthrough' {
+  if (key.escape || input === 'q') {
+    dispatch({ type: 'setMode', mode: 'reader' });
+    return 'handled';
+  }
+  if (input === 'j' || key.downArrow) {
+    dispatch({ type: 'setPickerCursor', index: Math.min(max - 1, state.pickerCursor + 1) });
+    return 'handled';
+  }
+  if (input === 'k' || key.upArrow) {
+    dispatch({ type: 'setPickerCursor', index: Math.max(0, state.pickerCursor - 1) });
+    return 'handled';
+  }
+  return 'passthrough';
+}
+
+function linkPickerKeys(
+  input: string,
+  key: InkKey,
+  state: AppState,
+  dispatch: (a: Action) => void
+): void {
+  const links = state.source.links;
+  if (commonPickerNav(input, key, links.length, state, dispatch) === 'handled') return;
+  if (key.return) {
+    const link = links[state.pickerCursor];
+    if (link) {
+      void openBrowser(link.href);
+    }
+    dispatch({ type: 'setMode', mode: 'reader' });
+  }
+}
+
+function codePickerKeys(
+  input: string,
+  key: InkKey,
+  state: AppState,
+  dispatch: (a: Action) => void
+): void {
+  const blocks = state.source.codeBlocks;
+  if (commonPickerNav(input, key, blocks.length, state, dispatch) === 'handled') return;
+  if (input === 'y') {
+    const block = blocks[state.pickerCursor];
+    if (block) {
+      void copyToClipboard(block.code);
+    }
+    return;
+  }
+  if (key.return) {
+    dispatch({ type: 'setMode', mode: 'reader' });
+  }
+}
+
+function filePickerKeys(
+  input: string,
+  key: InkKey,
+  _state: AppState,
+  _dispatch: (a: Action) => void,
+  env: { exit: () => void }
+): void {
+  if (key.escape) {
+    env.exit();
+    return;
+  }
+  // File picker is driven separately via the cli.ts pre-app launcher
+  // (see Task 28); this handler is a placeholder for future in-session file switching.
+  void input;
 }
