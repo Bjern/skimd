@@ -18,7 +18,7 @@ function summaryText(node: TocNode): string {
   if (s.codeBlocks) parts.push(`${s.codeBlocks} code block${s.codeBlocks === 1 ? '' : 's'}`);
   if (s.lists) parts.push(`${s.lists} list${s.lists === 1 ? '' : 's'}`);
   if (s.tables) parts.push(`${s.tables} table${s.tables === 1 ? '' : 's'}`);
-  return `▸ ${node.title}${parts.length ? ` (${parts.join(', ')})` : ''}`;
+  return `> ${node.title}${parts.length ? ` (${parts.join(', ')})` : ''}`;
 }
 
 export function computeVisibleLines(

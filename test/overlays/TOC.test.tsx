@@ -72,7 +72,7 @@ describe('TOC overlay', () => {
     ui.stdin.write(' ');
     await tick();
     await tick();
-    expect(ui.lastFrame()).toContain('▸ Intro');
+    expect(ui.lastFrame()).toContain('> Intro');
   });
 
   it('Esc closes TOC', async () => {

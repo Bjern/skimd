@@ -92,7 +92,7 @@ function renderHtmlBlock(ctx: RenderCtx, h: Tokens.HTML): void {
       ctx.links.push({ index, text: r.text, href: r.href });
       push(ctx, {
         kind: 'paragraph',
-        text: `${style(r.text, { color: 'blue', underline: true })}${style(`[${index}]`, { dim: true })}`,
+        text: `${style(r.text, { color: 'blue' })}${style(`[${index}]`, { dim: true })}`,
         refs: { linkIndices: [index] },
       });
       push(ctx, { kind: 'blank', text: '' });
@@ -156,7 +156,7 @@ function renderBlockquote(ctx: RenderCtx, q: Tokens.Blockquote): void {
   for (const tok of q.tokens ?? []) {
     const text = (tok as Tokens.Generic & { text?: string }).text ?? '';
     for (const line of text.split('\n')) {
-      push(ctx, { kind: 'quote', text: `${style('▎', { color: 'magenta' })} ${style(line, { italic: true, dim: true })}` });
+      push(ctx, { kind: 'quote', text: `${style('│', { color: 'magenta' })} ${style(line, { italic: true, dim: true })}` });
     }
   }
   push(ctx, { kind: 'blank', text: '' });
@@ -186,7 +186,7 @@ function renderCode(ctx: RenderCtx, c: Tokens.Code): void {
 
   push(ctx, {
     kind: 'code',
-    text: style(`╭─ ${lang}`.trimEnd(), { dim: true }),
+    text: style(`┌─ ${lang}`.trimEnd(), { dim: true }),
     refs: { codeBlockId: id },
   });
   ctx.codeAnchors.set(id, ctx.lines.length - 1);
@@ -196,7 +196,7 @@ function renderCode(ctx: RenderCtx, c: Tokens.Code): void {
   for (const line of highlighted.split('\n')) {
     push(ctx, { kind: 'code', text: `${style('│', { dim: true })} ${line}`, refs: { codeBlockId: id } });
   }
-  push(ctx, { kind: 'code', text: style('╰─', { dim: true }), refs: { codeBlockId: id } });
+  push(ctx, { kind: 'code', text: style('└─', { dim: true }), refs: { codeBlockId: id } });
   push(ctx, { kind: 'blank', text: '' });
 }
 
@@ -222,8 +222,11 @@ function renderInline(ctx: RenderCtx, tokens: Tokens.Generic[]): { text: string;
       const index = ctx.links.length + 1;
       ctx.links.push({ index, text: link.text ?? '', href: link.href ?? '' });
       linkIndices.push(index);
+      // Dropped underline: on Windows Terminal the underline attribute
+      // leaked into subsequent rows once scroll passed the link. Blue color
+      // plus the [n] suffix is enough to signal a link.
       parts.push(
-        `${style(link.text ?? '', { color: 'blue', underline: true })}${style(`[${index}]`, { dim: true })}`
+        `${style(link.text ?? '', { color: 'blue' })}${style(`[${index}]`, { dim: true })}`
       );
     } else if (tok.type === 'strong') {
       const s = tok as Tokens.Strong;
@@ -259,10 +262,10 @@ function renderHeading(ctx: RenderCtx, h: Tokens.Heading): void {
     push(ctx, { kind: 'blank', text: '' });
     push(ctx, { kind: 'heading', text: style(`# ${h.text}`, { color: 'cyan', bold: true }), refs: { headingId: id } });
     ctx.anchors.set(id, ctx.lines.length - 1);
-    push(ctx, { kind: 'heading', text: style('━'.repeat(Math.max(3, h.text.length + 2)), { color: 'cyan', dim: true }) });
+    push(ctx, { kind: 'heading', text: style('─'.repeat(Math.max(3, h.text.length + 2)), { color: 'cyan', dim: true }) });
   } else if (h.depth === 2) {
     push(ctx, { kind: 'blank', text: '' });
-    push(ctx, { kind: 'heading', text: style(`▎ ${h.text}`, { color: 'magenta', bold: true }), refs: { headingId: id } });
+    push(ctx, { kind: 'heading', text: style(`│ ${h.text}`, { color: 'magenta', bold: true }), refs: { headingId: id } });
     ctx.anchors.set(id, ctx.lines.length - 1);
   } else if (h.depth === 3) {
     push(ctx, { kind: 'heading', text: style(`### ${h.text}`, { color: 'green', bold: true }), refs: { headingId: id } });

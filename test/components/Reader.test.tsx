@@ -12,7 +12,7 @@ const lines: Line[] = Array.from({ length: 5 }, (_, i) => ({
 
 describe('Reader', () => {
   it('renders the visible slice of lines', () => {
-    const { lastFrame } = render(<Reader lines={lines} scrollOffset={1} height={3} />);
+    const { lastFrame } = render(<Reader lines={lines} scrollOffset={1} height={3} width={40} />);
     const frame = lastFrame() ?? '';
     expect(frame).toContain('line-1');
     expect(frame).toContain('line-2');
@@ -22,7 +22,7 @@ describe('Reader', () => {
   });
 
   it('handles offset at the end', () => {
-    const { lastFrame } = render(<Reader lines={lines} scrollOffset={3} height={5} />);
+    const { lastFrame } = render(<Reader lines={lines} scrollOffset={3} height={5} width={40} />);
     const frame = lastFrame() ?? '';
     expect(frame).toContain('line-3');
     expect(frame).toContain('line-4');
@@ -33,7 +33,7 @@ describe('Reader', () => {
       { kind: 'blank', text: '', headingPath: [] },
       { kind: 'paragraph', text: 'hi', headingPath: [] },
     ];
-    const { lastFrame } = render(<Reader lines={withBlank} scrollOffset={0} height={2} />);
+    const { lastFrame } = render(<Reader lines={withBlank} scrollOffset={0} height={2} width={40} />);
     expect(lastFrame()).toContain('hi');
   });
 });

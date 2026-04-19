@@ -21,12 +21,12 @@ describe('render — headings', () => {
     const out = render(parse('# Title'), { width: 80, strict: false, color: true });
     const plain = out.lines.map(l => stripAnsi(l.text));
     expect(plain.some(l => l === '# Title')).toBe(true);
-    expect(plain.some(l => /^━+$/.test(l))).toBe(true);
+    expect(plain.some(l => /^─+$/.test(l))).toBe(true);
   });
 
-  it('renders H2 with ▎ left-bar prefix', () => {
+  it('renders H2 with │ left-bar prefix', () => {
     const out = render(parse('## Sub'), { width: 80, strict: false, color: true });
-    expect(out.lines.map(l => stripAnsi(l.text)).some(l => l.startsWith('▎ Sub'))).toBe(true);
+    expect(out.lines.map(l => stripAnsi(l.text)).some(l => l.startsWith('│ Sub'))).toBe(true);
   });
 
   it('records heading anchor pointing at the heading line', () => {
@@ -54,11 +54,11 @@ describe('render — headings', () => {
 });
 
 describe('render — code blocks', () => {
-  it('renders a fenced code block boxed with ╭─ / ╰─', () => {
+  it('renders a fenced code block boxed with ┌─ / └─', () => {
     const out = render(parse('```bash\nnpm install\n```'), { width: 80, strict: false, color: true });
     const plain = out.lines.map(l => stripAnsi(l.text));
-    expect(plain.some(l => l.startsWith('╭─'))).toBe(true);
-    expect(plain.some(l => l.startsWith('╰─'))).toBe(true);
+    expect(plain.some(l => l.startsWith('┌─'))).toBe(true);
+    expect(plain.some(l => l.startsWith('└─'))).toBe(true);
     expect(plain.some(l => l.includes('npm install'))).toBe(true);
   });
 
@@ -103,15 +103,15 @@ describe('render — lists', () => {
 });
 
 describe('render — blockquote', () => {
-  it('renders blockquote with ▎ bar', () => {
+  it('renders blockquote with │ bar', () => {
     const out = render(parse('> quoted'), { width: 80, strict: false, color: true });
-    expect(out.lines.map(l => stripAnsi(l.text)).some(l => l.startsWith('▎ quoted'))).toBe(true);
+    expect(out.lines.map(l => stripAnsi(l.text)).some(l => l.startsWith('│ quoted'))).toBe(true);
   });
 
   it('renders multiline blockquote', () => {
     const out = render(parse('> line one\n> line two'), { width: 80, strict: false, color: true });
     const plain = out.lines.map(l => stripAnsi(l.text));
-    expect(plain.filter(l => l.startsWith('▎ ')).length).toBeGreaterThanOrEqual(2);
+    expect(plain.filter(l => l.startsWith('│ ')).length).toBeGreaterThanOrEqual(2);
   });
 });
 

@@ -21,7 +21,7 @@ export function TOC({
         <Text dimColor>(no headings)</Text>
       ) : (
         rows.map((r, i) => {
-          const marker = !r.hasChildren ? '•' : collapsed.has(r.id) ? '▸' : '▾';
+          const marker = !r.hasChildren ? '·' : collapsed.has(r.id) ? '>' : 'v';
           const indent = '  '.repeat(Math.max(0, r.depth - 1));
           return (
             <Text key={r.id} inverse={i === cursor} bold={r.id === activeId}>

@@ -26,7 +26,7 @@ describe('computeVisibleLines', () => {
     ];
     const visible = computeVisibleLines(lines, new Set(['a']), toc);
     const plain = visible.map(l => stripAnsi(l.text));
-    expect(plain).toContain('▸ A (2 paragraphs, 1 code block)');
+    expect(plain).toContain('> A (2 paragraphs, 1 code block)');
     expect(plain).not.toContain('body');
   });
 
@@ -46,7 +46,7 @@ describe('computeVisibleLines', () => {
     const visible = computeVisibleLines(lines, new Set(['a']), toc);
     const plain = visible.map(l => stripAnsi(l.text));
     expect(plain.some(l => l === '# A')).toBe(false);
-    expect(plain.some(l => l.startsWith('▸ A'))).toBe(true);
+    expect(plain.some(l => l.startsWith('> A'))).toBe(true);
   });
 
   it('omits zero-count categories from the summary', () => {
@@ -58,6 +58,6 @@ describe('computeVisibleLines', () => {
     ];
     const visible = computeVisibleLines(lines, new Set(['b']), simpleToc);
     const summary = visible.find(l => l.kind === 'collapsedSummary');
-    expect(stripAnsi(summary?.text ?? '')).toBe('▸ B');
+    expect(stripAnsi(summary?.text ?? '')).toBe('> B');
   });
 });

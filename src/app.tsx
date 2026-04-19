@@ -82,11 +82,17 @@ function Shell({
               lines={visible}
               scrollOffset={state.viewport.scrollOffset}
               height={readerHeight}
+              width={Math.max(1, width - 24)}
             />
           </Box>
         </Box>
       ) : (
-        <Reader lines={visible} scrollOffset={state.viewport.scrollOffset} height={readerHeight} />
+        <Reader
+          lines={visible}
+          scrollOffset={state.viewport.scrollOffset}
+          height={readerHeight}
+          width={width}
+        />
       )}
       {state.mode === 'search' && state.search ? (
         <SearchBar
