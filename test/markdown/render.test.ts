@@ -79,3 +79,25 @@ describe('render — code blocks', () => {
     expect(out.codeBlocks[0]?.lang).toBe('');
   });
 });
+
+describe('render — lists', () => {
+  it('renders ul with cyan • bullets', () => {
+    const out = render(parse('- a\n- b'), { width: 80, strict: false, color: true });
+    const plain = out.lines.map(l => stripAnsi(l.text));
+    expect(plain.some(l => /^• a$/.test(l))).toBe(true);
+    expect(plain.some(l => /^• b$/.test(l))).toBe(true);
+  });
+
+  it('renders ol with numeric prefix', () => {
+    const out = render(parse('1. first\n2. second'), { width: 80, strict: false, color: true });
+    const plain = out.lines.map(l => stripAnsi(l.text));
+    expect(plain.some(l => /^1\. first$/.test(l))).toBe(true);
+    expect(plain.some(l => /^2\. second$/.test(l))).toBe(true);
+  });
+
+  it('renders nested lists with 2-space indent', () => {
+    const out = render(parse('- a\n  - a1\n  - a2'), { width: 80, strict: false, color: true });
+    const plain = out.lines.map(l => stripAnsi(l.text));
+    expect(plain.some(l => /^ {2}• a1$/.test(l))).toBe(true);
+  });
+});

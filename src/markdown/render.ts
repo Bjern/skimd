@@ -47,9 +47,27 @@ function renderToken(ctx: RenderCtx, tok: Tokens.Generic): void {
       return renderHeading(ctx, tok as Tokens.Heading);
     case 'code':
       return renderCode(ctx, tok as Tokens.Code);
+    case 'list':
+      return renderList(ctx, tok as Tokens.List);
     case 'space':
       return;
   }
+}
+
+function renderList(ctx: RenderCtx, l: Tokens.List, depth = 0): void {
+  const indent = '  '.repeat(depth);
+  l.items.forEach((item, i) => {
+    const marker = l.ordered
+      ? style(`${(Number(l.start) || 1) + i}.`, { color: 'orange' })
+      : style('•', { color: 'cyan' });
+    const text = (item.text ?? '').split('\n')[0] ?? '';
+    push(ctx, { kind: 'list', text: `${indent}${marker} ${text}` });
+    for (const child of item.tokens ?? []) {
+      const t = child as Tokens.Generic;
+      if (t.type === 'list') renderList(ctx, t as Tokens.List, depth + 1);
+    }
+  });
+  if (depth === 0) push(ctx, { kind: 'blank', text: '' });
 }
 
 function renderCode(ctx: RenderCtx, c: Tokens.Code): void {
