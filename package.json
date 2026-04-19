@@ -3,9 +3,15 @@
   "version": "0.0.0",
   "description": "Terminal markdown reader — zero install, TOC, collapse, one command.",
   "type": "module",
-  "bin": { "skimd": "./dist/cli.js" },
-  "engines": { "node": ">=20" },
-  "files": ["dist"],
+  "bin": {
+    "skimd": "./dist/cli.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -26,6 +32,7 @@
   "devDependencies": {
     "@types/node": "^20.12.7",
     "@types/react": "^18.3.3",
+    "@vitest/coverage-v8": "^1.6.1",
     "ink-testing-library": "^4.0.0",
     "tsup": "^8.1.0",
     "typescript": "^5.4.5",

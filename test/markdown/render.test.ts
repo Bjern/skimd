@@ -193,4 +193,32 @@ describe('render — html blocks', () => {
     const plain = out.lines.map(l => stripAnsi(l.text)).join('\n');
     expect(plain).not.toContain('Y');
   });
+
+  it('renders html block that interpretHtml classifies as link', () => {
+    // marked normally inlines <a>, so we hand-craft an html block token
+    // to exercise the renderHtmlBlock 'link' case.
+    const ast = [{ type: 'html', raw: '<a href="http://x">hey</a>', pre: false, text: '<a href="http://x">hey</a>' }] as unknown as import('marked').TokensList;
+    const out = render(ast, { width: 80, strict: false, color: true });
+    expect(out.links[0]).toMatchObject({ text: 'hey', href: 'http://x' });
+  });
+
+  it('renders plain-text html block', () => {
+    const ast = [{ type: 'html', raw: '<span>plain</span>', pre: false, text: '<span>plain</span>' }] as unknown as import('marked').TokensList;
+    const out = render(ast, { width: 80, strict: false, color: true });
+    expect(out.lines.some(l => stripAnsi(l.text) === 'plain')).toBe(true);
+  });
+});
+
+describe('render — inline fallback', () => {
+  it('falls back to raw/text for unknown inline token types', () => {
+    // Hand-craft a paragraph with an unknown token type to exercise the else branch.
+    const ast = [{
+      type: 'paragraph',
+      raw: 'x',
+      text: 'x',
+      tokens: [{ type: 'mystery', raw: 'raw-value' }],
+    }] as unknown as import('marked').TokensList;
+    const out = render(ast, { width: 80, strict: false, color: true });
+    expect(stripAnsi(out.lines[0]?.text ?? '')).toContain('raw-value');
+  });
 });
