@@ -55,6 +55,22 @@ async function readFileDefault(p: string): Promise<string> {
   return raw.replace(/^\uFEFF/, '');
 }
 
+// When stdout is a pipe (not a TTY) on POSIX, `process.stdout.write` is async.
+// Calling `process.exit` before the data is flushed drops the output silently —
+// which looked like `npx skimd README.md` "doing nothing" when run through a
+// pipe. Wait for the drain callback before exiting.
+function writeAllAndExit(text: string, code: number): Promise<void> {
+  return new Promise(resolve => {
+    const ok = process.stdout.write(text, () => {
+      process.exit(code);
+      resolve();
+    });
+    // If write returned true, the callback still fires on the next tick; that's
+    // fine. If it returned false, the callback fires once the buffer drains.
+    void ok;
+  });
+}
+
 export async function main(): Promise<void> {
   const cli = meow(
     `
@@ -175,19 +191,20 @@ export async function main(): Promise<void> {
 
   if (cli.flags.code) {
     const blocks = extractCode(parse(source.content), cli.flags.lang);
-    process.stdout.write(blocks.map(b => b.code).join('\n\n') + '\n');
-    process.exit(0);
+    await writeAllAndExit(blocks.map(b => b.code).join('\n\n') + '\n', 0);
+    return;
   }
 
   if (!caps.isTty) {
-    process.stdout.write(
+    await writeAllAndExit(
       plainRender(source.content, {
         width,
         color: cli.flags.color && caps.color,
         strict: cli.flags.strict,
-      })
+      }),
+      0
     );
-    process.exit(0);
+    return;
   }
 
   const ast = parse(source.content);
