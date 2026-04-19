@@ -5,6 +5,7 @@ import { Reader } from './components/Reader.js';
 import { StatusBar } from './components/StatusBar.js';
 import { Help } from './components/overlays/Help.js';
 import { TOC } from './components/overlays/TOC.js';
+import { SearchBar } from './components/overlays/SearchBar.js';
 import { flattenToc } from './state/tocCursor.js';
 import { computeVisibleLines } from './state/visibleLines.js';
 import { useTerminalSize } from './hooks/useTerminalSize.js';
@@ -58,11 +59,19 @@ function Shell(): JSX.Element {
       ) : (
         <Reader lines={visible} scrollOffset={state.viewport.scrollOffset} height={readerHeight} />
       )}
-      <StatusBar
-        filename={state.source.path ?? '(stdin)'}
-        mode={state.mode}
-        currentHeading={currentTitle}
-      />
+      {state.mode === 'search' && state.search ? (
+        <SearchBar
+          query={state.search.query}
+          matchCount={state.search.matches.length}
+          activeIndex={state.search.activeIndex}
+        />
+      ) : (
+        <StatusBar
+          filename={state.source.path ?? '(stdin)'}
+          mode={state.mode}
+          currentHeading={currentTitle}
+        />
+      )}
     </Box>
   );
 }

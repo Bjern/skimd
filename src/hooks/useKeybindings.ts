@@ -1,6 +1,7 @@
 import { useInput } from 'ink';
 import type { AppState, Action } from '../state/store.js';
 import { flattenToc } from '../state/tocCursor.js';
+import { buildSearch } from '../markdown/search.js';
 
 type InkKey = {
   downArrow: boolean;
@@ -32,6 +33,10 @@ export function useKeybindings(
       tocKeys(input, k, state, dispatch);
       return;
     }
+    if (state.mode === 'search') {
+      searchKeys(input, k, state, dispatch);
+      return;
+    }
     if (state.mode === 'reader') {
       if (input === '?') {
         dispatch({ type: 'setMode', mode: 'help' });
@@ -40,6 +45,33 @@ export function useKeybindings(
       if (input === 't') {
         dispatch({ type: 'setMode', mode: 'toc' });
         dispatch({ type: 'setTocCursor', index: 0 });
+        return;
+      }
+      if (input === '/') {
+        dispatch({
+          type: 'setSearch',
+          search: { query: '', matches: [], activeIndex: 0, priorOffset: state.viewport.scrollOffset },
+        });
+        dispatch({ type: 'setMode', mode: 'search' });
+        return;
+      }
+      if (input === 'n' && state.search && state.search.matches.length > 0) {
+        const next = (state.search.activeIndex + 1) % state.search.matches.length;
+        dispatch({
+          type: 'setSearch',
+          search: { ...state.search, activeIndex: next },
+        });
+        dispatch({ type: 'scrollTo', offset: state.search.matches[next]!.lineIndex });
+        return;
+      }
+      if (input === 'N' && state.search && state.search.matches.length > 0) {
+        const total = state.search.matches.length;
+        const prev = (state.search.activeIndex - 1 + total) % total;
+        dispatch({
+          type: 'setSearch',
+          search: { ...state.search, activeIndex: prev },
+        });
+        dispatch({ type: 'scrollTo', offset: state.search.matches[prev]!.lineIndex });
         return;
       }
       readerKeys(input, k, state, dispatch, env);
@@ -100,5 +132,48 @@ function tocKeys(
       if (anchor !== undefined) dispatch({ type: 'scrollTo', offset: anchor });
       dispatch({ type: 'setMode', mode: 'reader' });
     }
+  }
+}
+
+function searchKeys(
+  input: string,
+  key: InkKey,
+  state: AppState,
+  dispatch: (a: Action) => void
+): void {
+  if (!state.search) return;
+  if (key.escape) {
+    dispatch({ type: 'scrollTo', offset: state.search.priorOffset });
+    dispatch({ type: 'setSearch', search: null });
+    dispatch({ type: 'setMode', mode: 'reader' });
+    return;
+  }
+  if (key.return) {
+    dispatch({ type: 'setMode', mode: 'reader' });
+    return;
+  }
+  // Backspace: Node/Ink passes backspace as input = '' with key.backspace,
+  // but some platforms send DEL (\x7f) as input. Handle both.
+  const isBackspace = input === '\x7f' || input === '\b' || input === '';
+  let nextQuery = state.search.query;
+  if (isBackspace) {
+    nextQuery = state.search.query.slice(0, -1);
+  } else if (input.length === 1 && input >= ' ') {
+    nextQuery = state.search.query + input;
+  } else {
+    return;
+  }
+  const matches = buildSearch(state.source.lines).find(nextQuery);
+  dispatch({
+    type: 'setSearch',
+    search: {
+      query: nextQuery,
+      matches,
+      activeIndex: 0,
+      priorOffset: state.search.priorOffset,
+    },
+  });
+  if (matches.length > 0) {
+    dispatch({ type: 'scrollTo', offset: matches[0]!.lineIndex });
   }
 }

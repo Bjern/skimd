@@ -29,7 +29,7 @@ export type AppState = {
   mode: Mode;
   collapsed: Set<string>;
   tocCursor: number;
-  search: { query: string; matches: Match[]; activeIndex: number } | null;
+  search: { query: string; matches: Match[]; activeIndex: number; priorOffset: number } | null;
   mouseTracking: boolean;
 };
 

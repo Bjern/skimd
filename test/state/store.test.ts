@@ -59,7 +59,7 @@ describe('reducer', () => {
   it('setSearch stores search state', () => {
     const s = reduce(base, {
       type: 'setSearch',
-      search: { query: 'q', matches: [], activeIndex: 0 },
+      search: { query: 'q', matches: [], activeIndex: 0, priorOffset: 0 },
     });
     expect(s.search?.query).toBe('q');
   });
