@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import { useInput } from 'ink';
 import type { AppState, Action } from '../state/store.js';
 import { flattenToc } from '../state/tocCursor.js';
@@ -23,14 +23,22 @@ export function useKeybindings(
   env: { exit: () => void; onPickFile?: (path: string) => void }
 ): void {
   const chordRef = useRef<string | null>(null);
+  // ink-testing-library rapidly fires stdin writes that can arrive before
+  // React has committed the previous state change. useInput's closure would
+  // then see stale `state`. Route every read through a live ref.
+  const stateRef = useRef(state);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   useInput((input, key) => {
+    const s = stateRef.current;
     const k = key as InkKey;
     if (k.ctrl && input === 'c') {
       env.exit();
       return;
     }
-    if (state.mode === 'help') {
+    if (s.mode === 'help') {
       if (input === 'q') {
         env.exit();
         return;
@@ -38,15 +46,15 @@ export function useKeybindings(
       dispatch({ type: 'setMode', mode: 'reader' });
       return;
     }
-    if (state.mode === 'toc') {
-      tocKeys(input, k, state, dispatch);
+    if (s.mode === 'toc') {
+      tocKeys(input, k, s, dispatch);
       return;
     }
-    if (state.mode === 'search') {
-      searchKeys(input, k, state, dispatch);
+    if (s.mode === 'search') {
+      searchKeys(input, k, s, dispatch);
       return;
     }
-    if (state.mode === 'codeOnly') {
+    if (s.mode === 'codeOnly') {
       if (input === 'c' || key.escape) {
         dispatch({ type: 'setMode', mode: 'reader' });
         return;
@@ -68,10 +76,10 @@ export function useKeybindings(
         return;
       }
       // Reuse reader scroll keys in codeOnly
-      readerKeys(input, k, state, dispatch, env);
+      readerKeys(input, k, s, dispatch, env);
       return;
     }
-    if (state.mode === 'reader') {
+    if (s.mode === 'reader') {
       // Chord continuation
       if (chordRef.current === 'g') {
         chordRef.current = null;
@@ -87,12 +95,12 @@ export function useKeybindings(
       }
       if (chordRef.current === ']') {
         chordRef.current = null;
-        if (input === ']') jumpHeading(state, dispatch, 1);
+        if (input === ']') jumpHeading(s, dispatch, 1);
         return;
       }
       if (chordRef.current === '[') {
         chordRef.current = null;
-        if (input === '[') jumpHeading(state, dispatch, -1);
+        if (input === '[') jumpHeading(s, dispatch, -1);
         return;
       }
       // Chord starts
@@ -113,7 +121,7 @@ export function useKeybindings(
         dispatch({ type: 'setMode', mode: 'help' });
         return;
       }
-      if (input === 't' && state.viewport.width >= 60) {
+      if (input === 't' && s.viewport.width >= 60) {
         dispatch({ type: 'setMode', mode: 'toc' });
         dispatch({ type: 'setTocCursor', index: 0 });
         return;
@@ -123,7 +131,7 @@ export function useKeybindings(
         return;
       }
       if (input === 'M') {
-        dispatch({ type: 'setMouseTracking', on: !state.mouseTracking });
+        dispatch({ type: 'setMouseTracking', on: !s.mouseTracking });
         return;
       }
       if (input === '/') {
@@ -133,38 +141,38 @@ export function useKeybindings(
             query: '',
             matches: [],
             activeIndex: 0,
-            priorOffset: state.viewport.scrollOffset,
+            priorOffset: s.viewport.scrollOffset,
           },
         });
         dispatch({ type: 'setMode', mode: 'search' });
         return;
       }
-      if (input === 'n' && state.search && state.search.matches.length > 0) {
-        const next = (state.search.activeIndex + 1) % state.search.matches.length;
-        dispatch({ type: 'setSearch', search: { ...state.search, activeIndex: next } });
-        dispatch({ type: 'scrollTo', offset: state.search.matches[next]!.lineIndex });
+      if (input === 'n' && s.search && s.search.matches.length > 0) {
+        const next = (s.search.activeIndex + 1) % s.search.matches.length;
+        dispatch({ type: 'setSearch', search: { ...s.search, activeIndex: next } });
+        dispatch({ type: 'scrollTo', offset: s.search.matches[next]!.lineIndex });
         return;
       }
-      if (input === 'N' && state.search && state.search.matches.length > 0) {
-        const total = state.search.matches.length;
-        const prev = (state.search.activeIndex - 1 + total) % total;
-        dispatch({ type: 'setSearch', search: { ...state.search, activeIndex: prev } });
-        dispatch({ type: 'scrollTo', offset: state.search.matches[prev]!.lineIndex });
+      if (input === 'N' && s.search && s.search.matches.length > 0) {
+        const total = s.search.matches.length;
+        const prev = (s.search.activeIndex - 1 + total) % total;
+        dispatch({ type: 'setSearch', search: { ...s.search, activeIndex: prev } });
+        dispatch({ type: 'scrollTo', offset: s.search.matches[prev]!.lineIndex });
         return;
       }
-      readerKeys(input, k, state, dispatch, env);
+      readerKeys(input, k, s, dispatch, env);
       return;
     }
-    if (state.mode === 'linkPicker') {
-      linkPickerKeys(input, k, state, dispatch);
+    if (s.mode === 'linkPicker') {
+      linkPickerKeys(input, k, s, dispatch);
       return;
     }
-    if (state.mode === 'codePicker') {
-      codePickerKeys(input, k, state, dispatch);
+    if (s.mode === 'codePicker') {
+      codePickerKeys(input, k, s, dispatch);
       return;
     }
-    if (state.mode === 'filePicker') {
-      filePickerKeys(input, k, state, dispatch, env);
+    if (s.mode === 'filePicker') {
+      filePickerKeys(input, k, s, dispatch, env);
       return;
     }
   });
@@ -184,9 +192,8 @@ function readerKeys(
   else if (input === 'd' || key.pageDown) dispatch({ type: 'scrollBy', delta: half });
   else if (input === 'u' || key.pageUp) dispatch({ type: 'scrollBy', delta: -half });
   else if (input === 'G' || (input === 'g' && key.shift)) {
-    // Land so the last page is fully visible (leave ~1 row for status bar).
-    const lastPage = Math.max(0, state.source.lines.length - Math.max(1, state.viewport.height - 1));
-    dispatch({ type: 'scrollTo', offset: lastPage });
+    // Reducer clamps to maxScroll (lines.length - viewport readerHeight).
+    dispatch({ type: 'scrollTo', offset: Number.MAX_SAFE_INTEGER });
   }
 }
 
@@ -227,12 +234,12 @@ function tocKeys(
 function searchKeys(
   input: string,
   key: InkKey,
-  state: AppState,
+  s: AppState,
   dispatch: (a: Action) => void
 ): void {
-  if (!state.search) return;
+  if (!s.search) return;
   if (key.escape) {
-    dispatch({ type: 'scrollTo', offset: state.search.priorOffset });
+    dispatch({ type: 'scrollTo', offset: s.search.priorOffset });
     dispatch({ type: 'setSearch', search: null });
     dispatch({ type: 'setMode', mode: 'reader' });
     return;
@@ -242,22 +249,22 @@ function searchKeys(
     return;
   }
   const isBackspace = input === '\x7f' || input === '\b' || input === '';
-  let nextQuery = state.search.query;
+  let nextQuery = s.search.query;
   if (isBackspace) {
-    nextQuery = state.search.query.slice(0, -1);
+    nextQuery = s.search.query.slice(0, -1);
   } else if (input.length === 1 && input >= ' ') {
-    nextQuery = state.search.query + input;
+    nextQuery = s.search.query + input;
   } else {
     return;
   }
-  const matches = buildSearch(state.source.lines).find(nextQuery);
+  const matches = buildSearch(s.source.lines).find(nextQuery);
   dispatch({
     type: 'setSearch',
     search: {
       query: nextQuery,
       matches,
       activeIndex: 0,
-      priorOffset: state.search.priorOffset,
+      priorOffset: s.search.priorOffset,
     },
   });
   if (matches.length > 0) {
@@ -265,9 +272,9 @@ function searchKeys(
   }
 }
 
-function jumpHeading(state: AppState, dispatch: (a: Action) => void, direction: 1 | -1): void {
-  const offset = state.viewport.scrollOffset;
-  const anchors = Array.from(state.source.anchors.values()).sort((a, b) => a - b);
+function jumpHeading(s: AppState, dispatch: (a: Action) => void, direction: 1 | -1): void {
+  const offset = s.viewport.scrollOffset;
+  const anchors = Array.from(s.source.anchors.values()).sort((a, b) => a - b);
   if (direction === 1) {
     const next = anchors.find(a => a > offset);
     if (next !== undefined) dispatch({ type: 'scrollTo', offset: next });

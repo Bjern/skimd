@@ -71,10 +71,20 @@ function clamp(n: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, n));
 }
 
+// The last legitimate scroll offset: one where the final line of the document
+// sits at the bottom of the Reader viewport (which is terminal height minus
+// the single-row status bar). Without this clamp the user can scroll until
+// only one line is visible, and Ink leaves the cells above it with stale
+// content from prior frames (e.g. H1 underlines, HRs).
+function maxScroll(state: AppState): number {
+  const readerHeight = Math.max(1, state.viewport.height - 1);
+  return Math.max(0, state.source.lines.length - readerHeight);
+}
+
 export function reduce(state: AppState, action: Action): AppState {
   switch (action.type) {
     case 'scrollBy': {
-      const max = Math.max(0, state.source.lines.length - 1);
+      const max = maxScroll(state);
       return {
         ...state,
         viewport: {
@@ -84,7 +94,7 @@ export function reduce(state: AppState, action: Action): AppState {
       };
     }
     case 'scrollTo': {
-      const max = Math.max(0, state.source.lines.length - 1);
+      const max = maxScroll(state);
       return {
         ...state,
         viewport: {
