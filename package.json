@@ -1,10 +1,10 @@
 {
   "name": "skimd",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Terminal markdown reader — zero install, TOC, collapse, one command.",
   "type": "module",
   "bin": {
-    "skimd": "./dist/cli.js"
+    "skimd": "dist/cli.js"
   },
   "engines": {
     "node": ">=20"
