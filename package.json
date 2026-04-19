@@ -2,6 +2,14 @@
   "name": "skimd",
   "version": "0.1.0",
   "description": "Terminal markdown reader — zero install, TOC, collapse, one command.",
+  "author": "Bjern Potgieter <bjern@valors.io>",
+  "homepage": "https://github.com/Bjern/skimd",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bjern/skimd.git"
+  },
+  "bugs": "https://github.com/Bjern/skimd/issues",
+  "keywords": ["markdown", "terminal", "cli", "reader", "tui", "ink", "readme"],
   "type": "module",
   "bin": {
     "skimd": "dist/cli.js"

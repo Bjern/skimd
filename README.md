@@ -39,10 +39,14 @@ curl -s https://example.com/README.md | skimd
 Extract code blocks:
 
 ```bash
-skimd --code README.md          # all blocks
-skimd --code=bash README.md     # only bash
+skimd --code README.md              # all blocks
+skimd --code --lang=bash README.md  # only bash
 ```
 
 ## Status
 
 v0.1.0 — under active development.
+
+## License
+
+[MIT](LICENSE) © [Bjern Potgieter](https://github.com/Bjern)
