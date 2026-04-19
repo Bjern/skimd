@@ -15,3 +15,40 @@ describe('render — basics', () => {
     expect(stripAnsi(out.lines[0]?.text ?? '')).toContain('hello world');
   });
 });
+
+describe('render — headings', () => {
+  it('renders H1 with underline rule', () => {
+    const out = render(parse('# Title'), { width: 80, strict: false, color: true });
+    const plain = out.lines.map(l => stripAnsi(l.text));
+    expect(plain.some(l => l === '# Title')).toBe(true);
+    expect(plain.some(l => /^━+$/.test(l))).toBe(true);
+  });
+
+  it('renders H2 with ▎ left-bar prefix', () => {
+    const out = render(parse('## Sub'), { width: 80, strict: false, color: true });
+    expect(out.lines.map(l => stripAnsi(l.text)).some(l => l.startsWith('▎ Sub'))).toBe(true);
+  });
+
+  it('records heading anchor pointing at the heading line', () => {
+    const out = render(parse('# A\n\nbody'), { width: 80, strict: false, color: true });
+    const idx = out.anchors.get('a');
+    expect(idx).toBeDefined();
+    expect(stripAnsi(out.lines[idx!]!.text)).toBe('# A');
+  });
+
+  it('pushes headingId onto headingPath for subsequent lines', () => {
+    const out = render(parse('# A\n\nbody'), { width: 80, strict: false, color: true });
+    const body = out.lines.find(l => l.kind === 'paragraph');
+    expect(body?.headingPath).toEqual(['a']);
+  });
+
+  it('renders H3 with ### prefix', () => {
+    const out = render(parse('### Three'), { width: 80, strict: false, color: true });
+    expect(out.lines.map(l => stripAnsi(l.text)).some(l => l.startsWith('### Three'))).toBe(true);
+  });
+
+  it('renders H4 with #### prefix', () => {
+    const out = render(parse('#### Four'), { width: 80, strict: false, color: true });
+    expect(out.lines.map(l => stripAnsi(l.text)).some(l => l.startsWith('#### Four'))).toBe(true);
+  });
+});
