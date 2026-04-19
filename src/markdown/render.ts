@@ -1,4 +1,5 @@
 import type { TokensList, Tokens } from 'marked';
+import { highlight } from 'cli-highlight';
 import { style } from './ansi.js';
 
 export type RenderOptions = { width: number; strict: boolean; color: boolean };
@@ -44,9 +45,32 @@ function renderToken(ctx: RenderCtx, tok: Tokens.Generic): void {
       return renderParagraph(ctx, tok as Tokens.Paragraph);
     case 'heading':
       return renderHeading(ctx, tok as Tokens.Heading);
+    case 'code':
+      return renderCode(ctx, tok as Tokens.Code);
     case 'space':
       return;
   }
+}
+
+function renderCode(ctx: RenderCtx, c: Tokens.Code): void {
+  const id = `code-${ctx.codeBlocks.length + 1}`;
+  const lang = (c.lang ?? '').trim();
+  const firstLine = (c.text.split('\n')[0] ?? '').slice(0, 80);
+  ctx.codeBlocks.push({ id, lang, code: c.text, firstLine });
+
+  push(ctx, {
+    kind: 'code',
+    text: style(`╭─ ${lang}`.trimEnd(), { dim: true }),
+    refs: { codeBlockId: id },
+  });
+  const highlighted = ctx.opts.color && lang
+    ? highlight(c.text, { language: lang, ignoreIllegals: true })
+    : c.text;
+  for (const line of highlighted.split('\n')) {
+    push(ctx, { kind: 'code', text: `${style('│', { dim: true })} ${line}`, refs: { codeBlockId: id } });
+  }
+  push(ctx, { kind: 'code', text: style('╰─', { dim: true }), refs: { codeBlockId: id } });
+  push(ctx, { kind: 'blank', text: '' });
 }
 
 function renderParagraph(ctx: RenderCtx, p: Tokens.Paragraph): void {
