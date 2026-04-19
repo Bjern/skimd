@@ -107,6 +107,7 @@ export async function main(): Promise<void> {
       links: [],
       codeBlocks: [],
       anchors: new Map(),
+      codeAnchors: new Map(),
       toc: [],
     };
     let currentInstance: ReturnType<typeof inkRender> | null = null;
@@ -128,6 +129,7 @@ export async function main(): Promise<void> {
           links: r.links,
           codeBlocks: r.codeBlocks,
           anchors: r.anchors,
+          codeAnchors: r.codeAnchors,
           toc,
         };
         currentInstance?.rerender(
@@ -207,6 +209,7 @@ export async function main(): Promise<void> {
           links: r.links,
           codeBlocks: r.codeBlocks,
           anchors: r.anchors,
+          codeAnchors: r.codeAnchors,
           toc,
         },
         width,

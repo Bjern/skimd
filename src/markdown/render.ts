@@ -24,6 +24,7 @@ export type RenderOutput = {
   links: Link[];
   codeBlocks: CodeBlock[];
   anchors: Map<string, number>;
+  codeAnchors: Map<string, number>;
 };
 
 type RenderCtx = {
@@ -32,6 +33,7 @@ type RenderCtx = {
   links: Link[];
   codeBlocks: CodeBlock[];
   anchors: Map<string, number>;
+  codeAnchors: Map<string, number>;
   headingPath: string[];
   usedSlugs: Set<string>;
 };
@@ -187,6 +189,7 @@ function renderCode(ctx: RenderCtx, c: Tokens.Code): void {
     text: style(`╭─ ${lang}`.trimEnd(), { dim: true }),
     refs: { codeBlockId: id },
   });
+  ctx.codeAnchors.set(id, ctx.lines.length - 1);
   const highlighted = ctx.opts.color && lang
     ? highlight(c.text, { language: lang, ignoreIllegals: true })
     : c.text;
@@ -280,9 +283,16 @@ export function render(ast: TokensList, opts: RenderOptions): RenderOutput {
     links: [],
     codeBlocks: [],
     anchors: new Map(),
+    codeAnchors: new Map(),
     headingPath: [],
     usedSlugs: new Set(),
   };
   for (const tok of ast) renderToken(ctx, tok as Tokens.Generic);
-  return { lines: ctx.lines, links: ctx.links, codeBlocks: ctx.codeBlocks, anchors: ctx.anchors };
+  return {
+    lines: ctx.lines,
+    links: ctx.links,
+    codeBlocks: ctx.codeBlocks,
+    anchors: ctx.anchors,
+    codeAnchors: ctx.codeAnchors,
+  };
 }

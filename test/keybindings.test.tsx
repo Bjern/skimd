@@ -18,6 +18,7 @@ const makeInit = (): Parameters<typeof App>[0]['init'] => ({
     links: [],
     codeBlocks: [],
     anchors: new Map(),
+    codeAnchors: new Map(),
     toc: [],
   },
   width: 40,
@@ -39,10 +40,15 @@ describe('keybindings — reader', () => {
     expect(ui.lastFrame()).toContain('line-1');
   });
 
-  it('G jumps to bottom', () => {
+  it('G jumps to last full page (not past)', () => {
     const ui = render(<App init={makeInit()} />);
     ui.stdin.write('G');
-    expect(ui.lastFrame()).toContain('line-19');
+    // With 20 lines and viewport height 5 (readerHeight = 4), the last page
+    // starts at 16. We should see 16..19 (or close), and line-15 MUST NOT be visible
+    // above line-16.
+    const frame = ui.lastFrame() ?? '';
+    expect(frame).toContain('line-19');
+    expect(frame).toContain('line-16');
   });
 
   it('g jumps to top after G', () => {

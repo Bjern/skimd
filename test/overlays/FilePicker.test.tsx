@@ -15,6 +15,7 @@ const makeInit = (): Parameters<typeof App>[0]['init'] => ({
     links: [],
     codeBlocks: [],
     anchors: new Map(),
+    codeAnchors: new Map(),
     toc: [],
   },
   width: 60,

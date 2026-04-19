@@ -31,6 +31,10 @@ export function useKeybindings(
       return;
     }
     if (state.mode === 'help') {
+      if (input === 'q') {
+        env.exit();
+        return;
+      }
       dispatch({ type: 'setMode', mode: 'reader' });
       return;
     }
@@ -179,8 +183,11 @@ function readerKeys(
   else if (input === 'k' || key.upArrow) dispatch({ type: 'scrollBy', delta: -1 });
   else if (input === 'd' || key.pageDown) dispatch({ type: 'scrollBy', delta: half });
   else if (input === 'u' || key.pageUp) dispatch({ type: 'scrollBy', delta: -half });
-  else if (input === 'G' || (input === 'g' && key.shift))
-    dispatch({ type: 'scrollTo', offset: state.source.lines.length });
+  else if (input === 'G' || (input === 'g' && key.shift)) {
+    // Land so the last page is fully visible (leave ~1 row for status bar).
+    const lastPage = Math.max(0, state.source.lines.length - Math.max(1, state.viewport.height - 1));
+    dispatch({ type: 'scrollTo', offset: lastPage });
+  }
 }
 
 function tocKeys(
@@ -325,6 +332,11 @@ function codePickerKeys(
     return;
   }
   if (key.return) {
+    const block = blocks[state.pickerCursor];
+    if (block) {
+      const anchor = state.source.codeAnchors.get(block.id);
+      if (anchor !== undefined) dispatch({ type: 'scrollTo', offset: anchor });
+    }
     dispatch({ type: 'setMode', mode: 'reader' });
   }
 }

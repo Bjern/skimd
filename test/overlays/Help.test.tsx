@@ -14,6 +14,7 @@ const makeInit = (): Parameters<typeof App>[0]['init'] => ({
     links: [],
     codeBlocks: [],
     anchors: new Map(),
+    codeAnchors: new Map(),
     toc: [],
   },
   width: 80,
@@ -35,5 +36,20 @@ describe('Help overlay', () => {
     await tick();
     await tick();
     expect(ui.lastFrame()).not.toContain('Keybindings');
+  });
+
+  it('q from Help exits (does not fall back to reader)', async () => {
+    const ui = render(<App init={makeInit()} />);
+    await tick();
+    ui.stdin.write('?');
+    await tick();
+    await tick();
+    expect(ui.lastFrame()).toContain('Keybindings');
+    ui.stdin.write('q');
+    await tick();
+    await tick();
+    // When exit() is called, Ink stops re-rendering; the help frame is preserved.
+    // If instead q had closed the overlay, the frame would now show reader mode.
+    expect(ui.lastFrame()).toContain('Keybindings');
   });
 });

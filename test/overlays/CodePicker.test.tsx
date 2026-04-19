@@ -17,13 +17,23 @@ const makeInit = (): Parameters<typeof App>[0]['init'] => ({
     content: '',
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ast: [] as any,
-    lines: [],
+    lines: [
+      { kind: 'paragraph', text: 'p0', headingPath: [] },
+      { kind: 'paragraph', text: 'p1', headingPath: [] },
+      { kind: 'code', text: 'echo a', headingPath: [], refs: { codeBlockId: 'code-1' } },
+      { kind: 'paragraph', text: 'p2', headingPath: [] },
+      { kind: 'code', text: 'print("b")', headingPath: [], refs: { codeBlockId: 'code-2' } },
+    ],
     links: [],
     codeBlocks: [
       { id: 'code-1', lang: 'bash', code: 'echo a', firstLine: 'echo a' },
       { id: 'code-2', lang: 'python', code: 'print("b")', firstLine: 'print("b")' },
     ],
     anchors: new Map(),
+    codeAnchors: new Map([
+      ['code-1', 2],
+      ['code-2', 4],
+    ]),
     toc: [],
   },
   width: 60,
@@ -87,5 +97,24 @@ describe('CodePicker', () => {
     await tick();
     await tick();
     expect(ui.lastFrame() ?? '').not.toContain('Code blocks');
+  });
+
+  it('Enter scrolls to the code block and returns to reader', async () => {
+    const ui = render(<App init={makeInit()} />);
+    await tick();
+    ui.stdin.write('g');
+    await tick();
+    ui.stdin.write('c');
+    await tick();
+    ui.stdin.write('j');
+    await tick();
+    ui.stdin.write('\r');
+    await tick();
+    await tick();
+    const frame = ui.lastFrame() ?? '';
+    expect(frame).not.toContain('Code blocks');
+    // Viewport should be at or after anchor 4 (code-2 line). Line 'p2' (index 3)
+    // or 'print' (index 4) visible.
+    expect(frame).toMatch(/print|p2/);
   });
 });

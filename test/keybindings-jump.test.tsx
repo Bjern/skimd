@@ -28,6 +28,7 @@ const init: Parameters<typeof App>[0]['init'] = {
     links: [],
     codeBlocks: [],
     anchors,
+    codeAnchors: new Map(),
     toc: [],
   },
   width: 40,

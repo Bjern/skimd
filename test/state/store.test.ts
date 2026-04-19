@@ -11,6 +11,7 @@ const emptySource: AppState['source'] = {
   links: [],
   codeBlocks: [],
   anchors: new Map(),
+  codeAnchors: new Map(),
   toc: [],
 };
 

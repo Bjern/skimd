@@ -29,6 +29,7 @@ describe('narrow terminal', () => {
             links: [],
             codeBlocks: [],
             anchors: new Map([['a', 0]]),
+            codeAnchors: new Map(),
             toc,
           },
           width: 50,

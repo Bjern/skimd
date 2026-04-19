@@ -23,6 +23,7 @@ export type AppState = {
     links: Link[];
     codeBlocks: CodeBlock[];
     anchors: Map<string, number>;
+    codeAnchors: Map<string, number>;
     toc: TocNode[];
   };
   viewport: { scrollOffset: number; width: number; height: number };
