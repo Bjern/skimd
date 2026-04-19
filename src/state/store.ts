@@ -28,6 +28,7 @@ export type AppState = {
   viewport: { scrollOffset: number; width: number; height: number };
   mode: Mode;
   collapsed: Set<string>;
+  tocCursor: number;
   search: { query: string; matches: Match[]; activeIndex: number } | null;
   mouseTracking: boolean;
 };
@@ -37,6 +38,7 @@ export type Action =
   | { type: 'scrollTo'; offset: number }
   | { type: 'setMode'; mode: Mode }
   | { type: 'toggleCollapse'; headingId: string }
+  | { type: 'setTocCursor'; index: number }
   | { type: 'setSearch'; search: AppState['search'] }
   | { type: 'setMouseTracking'; on: boolean };
 
@@ -50,6 +52,7 @@ export function initialState(init: {
     viewport: { scrollOffset: 0, width: init.width, height: init.height },
     mode: 'reader',
     collapsed: new Set(),
+    tocCursor: 0,
     search: null,
     mouseTracking: false,
   };
@@ -89,6 +92,8 @@ export function reduce(state: AppState, action: Action): AppState {
       else next.add(action.headingId);
       return { ...state, collapsed: next };
     }
+    case 'setTocCursor':
+      return { ...state, tocCursor: Math.max(0, action.index) };
     case 'setSearch':
       return { ...state, search: action.search };
     case 'setMouseTracking':
