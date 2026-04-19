@@ -23,7 +23,17 @@ export function useKeybindings(
       env.exit();
       return;
     }
-    if (state.mode === 'reader') readerKeys(input, k, state, dispatch, env);
+    if (state.mode === 'help') {
+      dispatch({ type: 'setMode', mode: 'reader' });
+      return;
+    }
+    if (state.mode === 'reader') {
+      if (input === '?') {
+        dispatch({ type: 'setMode', mode: 'help' });
+        return;
+      }
+      readerKeys(input, k, state, dispatch, env);
+    }
   });
 }
 

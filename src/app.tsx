@@ -3,6 +3,7 @@ import { Box, useApp } from 'ink';
 import { AppProvider, useAppState } from './state/context.js';
 import { Reader } from './components/Reader.js';
 import { StatusBar } from './components/StatusBar.js';
+import { Help } from './components/overlays/Help.js';
 import { computeVisibleLines } from './state/visibleLines.js';
 import { useTerminalSize } from './hooks/useTerminalSize.js';
 import { useScrollAnchor } from './hooks/useScrollAnchor.js';
@@ -32,7 +33,11 @@ function Shell(): JSX.Element {
   const readerHeight = Math.max(1, height - 1);
   return (
     <Box flexDirection="column" width={width} height={height}>
-      <Reader lines={visible} scrollOffset={state.viewport.scrollOffset} height={readerHeight} />
+      {state.mode === 'help' ? (
+        <Help />
+      ) : (
+        <Reader lines={visible} scrollOffset={state.viewport.scrollOffset} height={readerHeight} />
+      )}
       <StatusBar
         filename={state.source.path ?? '(stdin)'}
         mode={state.mode}
