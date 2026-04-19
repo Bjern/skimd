@@ -111,9 +111,45 @@ function renderCode(ctx: RenderCtx, c: Tokens.Code): void {
 }
 
 function renderParagraph(ctx: RenderCtx, p: Tokens.Paragraph): void {
-  const text = p.text ?? '';
-  push(ctx, { kind: 'paragraph', text: style(text, {}) });
+  const { text, linkIndices } = renderInline(ctx, (p.tokens ?? []) as Tokens.Generic[]);
+  const refs = linkIndices.length ? { linkIndices } : undefined;
+  push(ctx, refs ? { kind: 'paragraph', text, refs } : { kind: 'paragraph', text });
   push(ctx, { kind: 'blank', text: '' });
+}
+
+function renderInline(ctx: RenderCtx, tokens: Tokens.Generic[]): { text: string; linkIndices: number[] } {
+  const parts: string[] = [];
+  const linkIndices: number[] = [];
+  for (const t of tokens) {
+    const tok = t as Tokens.Generic;
+    if (tok.type === 'text') {
+      parts.push(tok.text ?? tok.raw ?? '');
+    } else if (tok.type === 'codespan') {
+      const cs = tok as Tokens.Codespan;
+      parts.push(style(cs.text ?? '', { color: 'yellow', invert: true }));
+    } else if (tok.type === 'link') {
+      const link = tok as Tokens.Link;
+      const index = ctx.links.length + 1;
+      ctx.links.push({ index, text: link.text ?? '', href: link.href ?? '' });
+      linkIndices.push(index);
+      parts.push(
+        `${style(link.text ?? '', { color: 'blue', underline: true })}${style(`[${index}]`, { dim: true })}`
+      );
+    } else if (tok.type === 'strong') {
+      const s = tok as Tokens.Strong;
+      const inner = renderInline(ctx, (s.tokens ?? []) as Tokens.Generic[]);
+      linkIndices.push(...inner.linkIndices);
+      parts.push(style(inner.text, { bold: true }));
+    } else if (tok.type === 'em') {
+      const e = tok as Tokens.Em;
+      const inner = renderInline(ctx, (e.tokens ?? []) as Tokens.Generic[]);
+      linkIndices.push(...inner.linkIndices);
+      parts.push(style(inner.text, { italic: true }));
+    } else {
+      parts.push((tok as Tokens.Generic).raw ?? (tok as Tokens.Generic).text ?? '');
+    }
+  }
+  return { text: parts.join(''), linkIndices };
 }
 
 function slug(text: string, used: Set<string>): string {

@@ -121,3 +121,36 @@ describe('render — horizontal rule', () => {
     expect(out.lines.map(l => stripAnsi(l.text)).some(l => l === '─'.repeat(40))).toBe(true);
   });
 });
+
+describe('render — inline formatting', () => {
+  it('collects links and numbers them', () => {
+    const out = render(parse('see [docs](https://x) here'), { width: 80, strict: false, color: true });
+    expect(out.links).toHaveLength(1);
+    expect(out.links[0]).toMatchObject({ index: 1, text: 'docs', href: 'https://x' });
+    expect(out.lines[0]?.refs?.linkIndices).toEqual([1]);
+    expect(stripAnsi(out.lines[0]?.text ?? '')).toContain('docs[1]');
+  });
+
+  it('styles inline codespan with invert', () => {
+    const out = render(parse('run `foo` now'), { width: 80, strict: false, color: true });
+    expect(stripAnsi(out.lines[0]?.text ?? '')).toContain('foo');
+  });
+
+  it('renders strong as bold', () => {
+    const out = render(parse('hello **world**'), { width: 80, strict: false, color: true });
+    expect(stripAnsi(out.lines[0]?.text ?? '')).toContain('world');
+    expect(out.lines[0]?.text).toContain('\x1b[1m');
+  });
+
+  it('renders em as italic', () => {
+    const out = render(parse('_stress_ test'), { width: 80, strict: false, color: true });
+    expect(stripAnsi(out.lines[0]?.text ?? '')).toContain('stress');
+    expect(out.lines[0]?.text).toContain('\x1b[3m');
+  });
+
+  it('numbers multiple links in order', () => {
+    const out = render(parse('[a](http://a) and [b](http://b)'), { width: 80, strict: false, color: true });
+    expect(out.links.map(l => l.text)).toEqual(['a', 'b']);
+    expect(out.lines[0]?.refs?.linkIndices).toEqual([1, 2]);
+  });
+});
