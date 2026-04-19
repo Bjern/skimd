@@ -18,6 +18,10 @@ const RESET = '\x1b[0m';
 //     past a section containing styled inline text.
 function rowFor(text: string, width: number): string {
   const content = `${RESET}${text}${RESET}`;
+  // TODO(v0.2.0): .length counts UTF-16 code units, not terminal columns.
+  // CJK and most emoji occupy 2 columns; we'll leave one stale cell per wide
+  // glyph at the end of the row. Swap in a wcwidth-equivalent when adding
+  // table/width handling for non-ASCII content.
   const visible = stripAnsi(text).length;
   const padding = Math.max(0, width - visible);
   return `${content}${' '.repeat(padding)}`;
