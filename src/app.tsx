@@ -64,11 +64,11 @@ function Shell({
       {state.mode === 'help' ? (
         <Help />
       ) : state.mode === 'linkPicker' ? (
-        <LinkPicker links={state.source.links} cursor={state.pickerCursor} />
+        <LinkPicker links={state.source.links} cursor={state.pickerCursor} height={height} />
       ) : state.mode === 'codePicker' ? (
-        <CodePicker blocks={state.source.codeBlocks} cursor={state.pickerCursor} />
+        <CodePicker blocks={state.source.codeBlocks} cursor={state.pickerCursor} height={height} />
       ) : state.mode === 'filePicker' ? (
-        <FilePicker files={state.discoveryFiles} cursor={state.pickerCursor} />
+        <FilePicker files={state.discoveryFiles} cursor={state.pickerCursor} height={height} />
       ) : state.mode === 'toc' ? (
         <Box flexDirection="row" height={readerHeight}>
           <TOC
@@ -76,6 +76,7 @@ function Shell({
             cursor={state.tocCursor}
             collapsed={state.collapsed}
             activeId={currentId}
+            height={readerHeight}
           />
           <Box flexGrow={1}>
             <Reader

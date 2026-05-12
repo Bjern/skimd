@@ -45,7 +45,7 @@ skimd --code --lang=bash README.md  # only bash
 
 ## Status
 
-v0.1.0 — under active development.
+v0.1.5 — under active development.
 
 ## License
 
